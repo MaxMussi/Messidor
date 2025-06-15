@@ -1,36 +1,38 @@
 import curses
 
+color_cache = {}
+next_color_id = 1
+
+def getColorId(key):
+    global next_color_id
+    if key in color_cache:
+        return color_cache[key]
+    
+    fg, bg = key
+    curses.init_pair(next_color_id, fg, bg)
+    color_cache[key] = next_color_id
+    next_color_id += 1
+    return color_cache[key]
+
 class Layer:
     def __init__(self, width, height):
-        self.map_data = [[" " for _ in range(width)] for _ in range(height)]
-        self.map_color = [[[7, -1] for _ in range(width)] for _ in range(height)]
-        self.color_cache = {}
-        self.next_color_id = 1
+        self.map_data = [[None for _ in range(width)] for _ in range(height)]
 
     def draw(self, stdscr):
         for y in range(len(self.map_data)):
             for x in range(len(self.map_data[y])):
-                char = self.map_data[y][x]
-                fg, bg = self.map_color[y][x]
-                color_id = self.getColorId((fg, bg))
-                if char != " ":
-                    stdscr.addch(y, x, char, curses.color_pair(color_id))
-                else:
-                    continue
+                tile = self.map_data[y][x]
+                if tile is not None:
+                    char = tile.char
+                    fg, bg = tile.color
+                    color_id = getColorId((fg, bg))
+                    try:
+                        stdscr.addch(y, x, char, curses.color_pair(color_id))
+                    except curses.error:
+                        pass
         curses.curs_set(0)
 
     def clear(self):
         for y in range(len(self.map_data)):
             for x in range(len(self.map_data[y])):
-                self.map_data[y][x] = " "
-                self.map_color[y][x] = [7,-1]
-
-    def getColorId(self, key):
-        if key in self.color_cache:
-            return self.color_cache[key]
-        
-        fg, bg = key
-        curses.init_pair(self.next_color_id, fg, bg)
-        self.color_cache[key] = self.next_color_id
-        self.next_color_id += 1
-        return self.color_cache[key]
+                self.map_data[y][x] = None
