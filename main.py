@@ -22,8 +22,6 @@ def main(stdscr):
     floor = Tile(".", (15, -1), True)
     cobble = Tile("#", (8, -1), False)
 
-    bg.map_data = [[floor for _ in range(WIDTH)] for _ in range(HEIGHT)]
-
     for y in range(HEIGHT):
         for x in range(WIDTH):
             val = noise.pnoise2(x / COBBLE_SCALE, y / COBBLE_SCALE, octaves=3, persistence=0.5, base=SEED)
