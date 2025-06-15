@@ -5,12 +5,12 @@ class Player:
         self.color = color
         self.cordX = cordX
         self.cordY = cordY
-    def controls(self, key):
-        if key == ord("w"):
+    def controls(self, key, map_data):
+        if key == ord("w") and map_data[self.cordY - 1][self.cordX].passable == True:
             self.cordY -= 1
-        elif key == ord("a"):
+        elif key == ord("a") and map_data[self.cordY][self.cordX - 1].passable == True:
             self.cordX -= 1
-        elif key == ord("s"):
+        elif key == ord("s") and map_data[self.cordY + 1][self.cordX].passable == True:
             self.cordY += 1
-        elif key == ord("d"):
+        elif key == ord("d") and map_data[self.cordY][self.cordX + 1].passable == True:
             self.cordX += 1
