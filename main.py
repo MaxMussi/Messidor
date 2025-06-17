@@ -1,53 +1,69 @@
 import curses
-import noise
-from tiles import Tile
 from entities import Player
 from renderer import Layer
+from terrain import World
 
-WIDTH = 120
+# Screen size
 HEIGHT = 30
+WIDTH = 120
 
-COBBLE_SCALE = 5
-THRESHOLD = 0.15
+# Camera bounding box
+CAMERA_BOX_HEIGHT = 6
+CAMERA_BOX_WIDTH = 24
 
-SEED = 24
+# World gen constants
+SEED = 12
+SCALE = 5
 
 def main(stdscr):
+    # Initialize curses colors
     curses.start_color()
     curses.use_default_colors()
 
-    bg = Layer(WIDTH, HEIGHT)
-    fg = Layer(WIDTH, HEIGHT)
+    # Enable keyboard interrupt
+    stdscr.nodelay(False)
 
-    floor = Tile(".", (15, -1), True)
-    cobble = Tile("#", (8, -1), False)
+    # Clear terminal
+    stdscr.clear()
 
-    for y in range(HEIGHT):
-        for x in range(WIDTH):
-            val = noise.pnoise2(x / COBBLE_SCALE, y / COBBLE_SCALE, octaves=3, persistence=0.5, base=SEED)
-            if val > THRESHOLD:
-                bg.map_data[y][x] = cobble
-            else:
-                bg.map_data[y][x] = floor
+    # Initialize layers
+    bg = Layer(WIDTH, HEIGHT, (0, 0))
+    fg = Layer(WIDTH, HEIGHT, (0, 0))
 
-    player = Player("player", (11, -1), HEIGHT//2, WIDTH//2)
-
-    fg.map_data[player.cordY][player.cordX] = player
+    # Initialize world and player
+    world = World(SEED, SCALE)
+    player = Player("player", "@", (11, -1), (0, 0))  # Start at world position (0, 0)
 
     while True:
+        # Update background position to follow player
+        bg.pos = player.cords
+
+        # Clear background layer
+        bg.clear()
+
+        # Fill background layer with visible world tiles
+        for y in range(HEIGHT):
+            for x in range(WIDTH):
+                posY, posX = bg.pos
+                bg.data[y][x] = world.generator((posY + y, posX + x))
+
+        # Clear and draw player on foreground layer
+        fg.clear()
+        fg.data[HEIGHT // 2][WIDTH // 2] = player
+
+        # Render to screen
         bg.draw(stdscr)
         fg.draw(stdscr)
-
         stdscr.refresh()
+
+        # Get input
         key = stdscr.getch()
 
-        fg.clear()
+        # Process input and collision
+        player.controls(key, bg.data, (HEIGHT // 2, WIDTH // 2))
 
-        player.controls(key, bg.map_data)
-        
+        # Quit if requested
         if key == ord("q"):
             break
-
-        fg.map_data[player.cordY][player.cordX] = player
 
 curses.wrapper(main)

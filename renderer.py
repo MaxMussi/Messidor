@@ -3,6 +3,7 @@ import curses
 color_cache = {}
 next_color_id = 1
 
+# Keeps track of used colors
 def getColorId(key):
     global next_color_id
     if key in color_cache:
@@ -15,13 +16,14 @@ def getColorId(key):
     return color_cache[key]
 
 class Layer:
-    def __init__(self, width, height):
-        self.map_data = [[None for _ in range(width)] for _ in range(height)]
+    def __init__(self, width, height, pos):
+        self.data = [[None for _ in range(width)] for _ in range(height)]
+        self.pos = pos
 
     def draw(self, stdscr):
-        for y in range(len(self.map_data)):
-            for x in range(len(self.map_data[y])):
-                tile = self.map_data[y][x]
+        for y in range(len(self.data)):
+            for x in range(len(self.data[y])):
+                tile = self.data[y][x]
                 if tile is not None:
                     char = tile.char
                     fg, bg = tile.color
@@ -33,6 +35,7 @@ class Layer:
         curses.curs_set(0)
 
     def clear(self):
-        for y in range(len(self.map_data)):
-            for x in range(len(self.map_data[y])):
-                self.map_data[y][x] = None
+        for y in range(len(self.data)):
+            for x in range(len(self.data[y])):
+                self.data[y][x] = None
+
