@@ -13,7 +13,7 @@ CAMERA_BOX_WIDTH = 24
 
 # World gen constants
 SEED = 12
-SCALE = 5
+BIOMESCALE = 256
 
 def getCameraCords(pCords, cPos):
     pCordY, pCordX = pCords
@@ -52,7 +52,7 @@ def main(stdscr):
     fg = Layer(WIDTH, HEIGHT, (0, 0))
 
     # Initialize world and player
-    world = World(SEED, SCALE)
+    world = World(SEED, BIOMESCALE)
     player = Player("player", "@", (11, -1), (0, 0))  # Start at world position (0, 0)
 
     while True:
