@@ -4,8 +4,8 @@ from renderer import Layer
 from terrain import World
 
 # Screen size
-HEIGHT = 30
-WIDTH = 120
+HEIGHT = 40
+WIDTH = 170
 
 # Camera bounding box
 CAMERA_BOX_HEIGHT = 6
