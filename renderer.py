@@ -24,7 +24,7 @@ class Layer:
         for y in range(len(self.data)):
             for x in range(len(self.data[y])):
                 tile = self.data[y][x]
-                if tile is not None:
+                if tile != None:
                     char = tile.char
                     fg, bg = tile.color
                     color_id = getColorId((fg, bg))
