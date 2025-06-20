@@ -1,7 +1,5 @@
 import curses
 import math
-from terrain import Tile
-from entities import Entity
 
 next_color_id = 16
 next_pair_id = 1
@@ -15,8 +13,6 @@ def getColor(color):
     global next_color_id
     if color in colorIDs:
         return colorIDs[color]
-    if not isinstance(color, tuple) or len(color) != 3:
-        raise ValueError(f"Invalid color: {color}")
     r, g, b = [int(c * CONV) for c in color]
     curses.init_color(next_color_id, r, g, b)
     colorIDs[color] = next_color_id
@@ -60,7 +56,7 @@ class Layer:
                 if isinstance(currentChar, tuple) or isinstance(currentColor[0][0], tuple):
                     animSpd = getattr(tile, "animSpd", 1)
                     if isinstance(char, tuple):
-                        charFrame = (self.frame // animSpd) % len(char)
+                        charFrame = math.floor(self.frame / animSpd) % len(char)
                         currentChar = char[charFrame]
                     if isinstance(color[0][0], tuple):
                         colorFrame = (self.frame // animSpd) % len(color)
@@ -85,7 +81,8 @@ class Layer:
                 except curses.error:
                     pass
 
-    def clear(self):
-        for y in range(self.height):
-            for x in range(self.width):
-                self.data[y][x] = None
+    def clear(self, height, width):
+        self.height = height
+        self.width = width
+        self.data = [[None for _ in range(width)] for _ in range(height)]
+
