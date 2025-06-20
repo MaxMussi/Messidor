@@ -1,113 +1,62 @@
 import curses
-from entities import Player, Creature
-from entities import Spawner
+import time
 from renderer import Layer
-from terrain import World
-
-# Screen dimensions
-HEIGHT = 40
-WIDTH = 170
-
-# Camera bounding box size
-CAMERA_BOX_HEIGHT = 6
-CAMERA_BOX_WIDTH = 24
-
-# World generation constants
-SEED = 12
-BIOMESCALE = 256
-
-def getCameraCords(pCords, cPos):
-    pY, pX = pCords
-    cY, cX = cPos
-
-    if (pY - cY) > (CAMERA_BOX_HEIGHT // 2):
-        cY += (pY - cY) - (CAMERA_BOX_HEIGHT // 2)
-    elif (cY - pY) > (CAMERA_BOX_HEIGHT // 2):
-        cY -= (cY - pY) - (CAMERA_BOX_HEIGHT // 2)
-
-    if (pX - cX) > (CAMERA_BOX_WIDTH // 2):
-        cX += (pX - cX) - (CAMERA_BOX_WIDTH // 2)
-    elif (cX - pX) > (CAMERA_BOX_WIDTH // 2):
-        cX -= (cX - pX) - (CAMERA_BOX_WIDTH // 2)
-
-    return (cY, cX)
-
-def getLayerCords(pCords, cPos):
-    pY, pX = pCords
-    cY, cX = cPos
-    return (pY - cY + (HEIGHT // 2), pX - cX + (WIDTH // 2))
+from terrain import Tile
+from entities import Player
 
 def main(stdscr):
-    # Initialize curses color system
     curses.start_color()
     curses.use_default_colors()
-    stdscr.nodelay(False)
-    stdscr.clear()
+    stdscr.nodelay(True)
 
-    # Create background and foreground layers
-    bg = Layer(WIDTH, HEIGHT, (0, 0))
-    fg = Layer(WIDTH, HEIGHT, (0, 0))
+    height, width = stdscr.getmaxyx()
 
-    # Initialize world, player and spawner
-    world = World(SEED, BIOMESCALE)
-    player = Player("player", "@", (11, -1), (0, 0), 100, 100, 100)
-    spawner = Spawner(10, 0)
+    bg = Layer(height, width)
+    fg = Layer(height, width)
+    ui = Layer(height, width)
+
+    floor = Tile(
+    (
+        (".", ","),
+        (((255, 255, 255), (0, 0, 0)),((255, 255, 255), (0, 0, 0))),
+    ),
+    frame=0,
+    animSpd=1/4
+)
+
+
+    player = Player("Max",("@",((255,255,0), None)),(height//2,width//2),100,100,100)
 
     while True:
-        # Update camera position
-        camera_pos = getCameraCords(player.cords, fg.pos)
-        bg.pos = camera_pos
-        fg.pos = camera_pos
+        curses.curs_set(0)
 
-        # Fill background layer with world tiles
+        height, width = stdscr.getmaxyx()
+        for layer in [bg, fg, ui]:
+            layer.height = height
+            layer.width = width
+
         bg.clear()
-        for y in range(HEIGHT):
-            for x in range(WIDTH):
-                posY, posX = bg.pos
-                bg.data[y][x] = world.generator((posY + y, posX + x))
+        for y in range(height):
+            for x in range(width):
+                bg.data[y][x] = floor
 
-        # Fill foreground layer with entities
         fg.clear()
-        for y in range(HEIGHT):
-            for x in range(WIDTH):
-                posY, posX = fg.pos
-                world_coords = (posY + y, posX + x)
-                entity = spawner.getMob(world_coords, world)
-                if entity:
-                    fg.data[y][x] = entity
-
-        # Run AI for all visible creatures
-        for y in range(HEIGHT):
-            for x in range(WIDTH):
-                creature = fg.data[y][x]
-                if creature and not isinstance(creature, Player):
-                    old_cords = creature.cords
-                    creature.tickAi(bg.data, fg.data)
-                    if creature.cords != old_cords:
-                        fg.data[y][x] = None
-                        lY, lX = getLayerCords(creature.cords, fg.pos)
-                        if 0 <= lY < HEIGHT and 0 <= lX < WIDTH:
-                            fg.data[lY][lX] = creature
-
-        # Draw the player
-        lY, lX = getLayerCords(player.cords, fg.pos)
-        if 0 <= lY < HEIGHT and 0 <= lX < WIDTH:
-            fg.data[lY][lX] = player
-
-        # Render both layers
+        pCordY, pCordX = player.cords
+        fg.data[pCordY][pCordX] = player
+    
         bg.draw(stdscr)
-        fg.draw(stdscr)
+        fg.draw(stdscr, bg.data)
+
         stdscr.refresh()
 
-        # Handle input
-        key = stdscr.getch()
+        stdscr.timeout(17)
+        key=stdscr.getch()
 
-        # Move player
-        lY, lX = getLayerCords(player.cords, fg.pos)
-        player.controls(key, bg.data, fg.data, (lY, lX))
+        player.controls(key, bg.data, fg.data, player.cords)
 
-        # Exit on 'q'
         if key == ord("q"):
             break
+
+        time.sleep(1/60)
 
 curses.wrapper(main)
