@@ -40,10 +40,13 @@ class Layer:
         self.height = height
         self.width = width
         self.data = [[None for _ in range(width)] for _ in range(height)]
-        self.frameLock = False
+        self.frame = 0
 
     def draw(self, stdscr, underlayer=None):
-        self.frameLock = False
+        if self.frame < 24:
+            self.frame += 1
+        else:
+            self.frame = 0
         for y in range(self.height):
             for x in range(self.width):
                 tile = self.data[y][x]
@@ -54,27 +57,26 @@ class Layer:
                 currentChar = char
                 currentColor = color
 
-                if getattr(tile, "frame", -1) >= 0 and getattr(tile, "simple", True):
-                    if tile.frame >= max(len(char), len(color)):
-                        tile.frame = 0
-                    currentFrame = math.floor(tile.frame)
+                if isinstance(currentChar, tuple) or isinstance(currentColor[0][0], tuple):
+                    animSpd = getattr(tile, "animSpd", 1)
                     if isinstance(char, tuple):
-                        currentChar = char[currentFrame]
-                    if isinstance(color, tuple):
-                        currentColor = color[currentFrame]
-                    if self.frameLock == False:
-                        tile.frame += getattr(tile, "animSpd", 1)
-                        self.frameLock = True
+                        charFrame = (self.frame // animSpd) % len(char)
+                        currentChar = char[charFrame]
+                    if isinstance(color[0][0], tuple):
+                        colorFrame = (self.frame // animSpd) % len(color)
+                        currentColor = color[colorFrame]
 
                 fgColor, bgColor = currentColor
 
-                if bgColor is None and underlayer is not None:
-                    underTile = underlayer[y][x]
-                    if underTile is not None:
-                        _, bg = underTile.metaTile[1]
-                        if isinstance(bg[0], tuple):
-                            _, bgColor = bg
-
+                if bgColor is None and underlayer[y][x] is not None:
+                    underChar, underColor = underlayer[y][x].metaTile
+                    if isinstance(underColor[0][0], tuple):
+                        underAnimSpd = getattr(underlayer[y][x], "animSpd", 1)
+                        underFrame = (self.frame // underAnimSpd) % len(underColor)
+                        underFg, underBg = underColor[underFrame]
+                    else:
+                        underFg, underBg = underColor
+                    bgColor = underBg
 
                 pairID = getColorPair(fgColor, bgColor)
 

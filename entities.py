@@ -16,11 +16,10 @@ def isFree(mapData, entityData, cordY, cordX):
         return False
     
 class Entity:
-    def __init__(self, metaTile, cords, health, frame=-1, simple=True, animSpd=0):
+    def __init__(self, metaTile, cords, health, simple=True, animSpd=0):
         self.metaTile = metaTile
         self.cords = cords
         self.health = health
-        self.frame = frame
         self.simple = simple
         self.animSpd = animSpd
 
@@ -40,3 +39,5 @@ class Player(Entity):
         mapX = wolrdCords[1] + dx
         if isFree(mapData, entityData, mapY, mapX):
             self.cords = (newY, newX)
+            return True
+        return False

@@ -15,15 +15,7 @@ def main(stdscr):
     fg = Layer(height, width)
     ui = Layer(height, width)
 
-    floor = Tile(
-    (
-        (".", ","),
-        (((255, 255, 255), (0, 0, 0)),((255, 255, 255), (0, 0, 0))),
-    ),
-    frame=0,
-    animSpd=1/4
-)
-
+    floor = Tile(((".", ","),((255, 255, 255), (0, 0, 0))),animSpd=8)
 
     player = Player("Max",("@",((255,255,0), None)),(height//2,width//2),100,100,100)
 
@@ -52,7 +44,7 @@ def main(stdscr):
         stdscr.timeout(17)
         key=stdscr.getch()
 
-        player.controls(key, bg.data, fg.data, player.cords)
+        run = player.controls(key, bg.data, fg.data, player.cords)
 
         if key == ord("q"):
             break
