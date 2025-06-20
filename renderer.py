@@ -37,6 +37,7 @@ class Layer:
         self.width = width
         self.data = [[None for _ in range(width)] for _ in range(height)]
         self.frame = 0
+        self.pos = (0,0)
 
     def draw(self, stdscr, underlayer=None):
         if self.frame < 24:
@@ -53,12 +54,12 @@ class Layer:
                 currentChar = char
                 currentColor = color
 
-                if isinstance(currentChar, tuple) or isinstance(currentColor[0][0], tuple):
+                if isinstance(currentChar, tuple) or (isinstance(currentColor[0], tuple) and isinstance(currentColor[0][0], tuple)):
                     animSpd = getattr(tile, "animSpd", 1)
                     if isinstance(char, tuple):
                         charFrame = math.floor(self.frame / animSpd) % len(char)
                         currentChar = char[charFrame]
-                    if isinstance(color[0][0], tuple):
+                    if isinstance(currentColor, tuple) and isinstance(currentColor[0], tuple):
                         colorFrame = (self.frame // animSpd) % len(color)
                         currentColor = color[colorFrame]
 
