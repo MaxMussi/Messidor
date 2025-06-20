@@ -84,13 +84,15 @@ def main(stdscr):
 
         stdscr.refresh()
 
-        stdscr.timeout(42)
         key=stdscr.getch()
 
-        run = player.controls(key, bg.data, fg.data, player.cords)
+        run = player.controls(key, bg.data, fg.data, getCordsInLayer(layerPos, player.cords, height, width))
 
         if key == ord("q"):
             break
+
+        if stdscr.getch() != -1:
+            pass
 
         end = time.time()
 
