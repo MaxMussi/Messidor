@@ -1,7 +1,7 @@
 import curses
 import math
 
-next_color_id = 16
+next_color_id = 1
 next_pair_id = 1
 
 colorIDs = {}
@@ -50,35 +50,37 @@ class Layer:
                 if tile is None:
                     continue
 
-                char, color = tile.metaTile
-                currentChar = char
-                currentColor = color
+                chars = tile.chars
+                colors = tile.colors
+                char = chars
+                color = colors
 
-                if isinstance(currentChar, tuple) or (isinstance(currentColor[0], tuple) and isinstance(currentColor[0][0], tuple)):
+                if isinstance(char, tuple) or (isinstance(color[0], tuple) and isinstance(color[0][0], tuple)):
                     animSpd = getattr(tile, "animSpd", 1)
-                    if isinstance(char, tuple):
-                        charFrame = math.floor(self.frame / animSpd) % len(char)
-                        currentChar = char[charFrame]
-                    if isinstance(currentColor[0], tuple) and isinstance(currentColor[0][0], tuple):
-                        colorFrame = (self.frame // animSpd) % len(color)
-                        currentColor = color[colorFrame]
+                    if isinstance(chars, tuple):
+                        charFrame = math.floor(self.frame / animSpd) % len(chars)
+                        char = chars[charFrame]
+                    if isinstance(color[0], tuple) and isinstance(color[0][0], tuple):
+                        colorFrame = (self.frame // animSpd) % len(colors)
+                        color = colors[colorFrame]
 
-                fgColor, bgColor = currentColor
+                fgColor, bgColor = color
 
                 if bgColor is None and underlayer[y][x] is not None:
-                    underChar, underColor = underlayer[y][x].metaTile
-                    if isinstance(underColor[0][0], tuple):
+                    underChars = underlayer[y][x].chars
+                    underColors = underlayer[y][x].colors
+                    if isinstance(underColors[0][0], tuple):
                         underAnimSpd = getattr(underlayer[y][x], "animSpd", 1)
-                        underFrame = (self.frame // underAnimSpd) % len(underColor)
-                        underFg, underBg = underColor[underFrame]
+                        underFrame = (self.frame // underAnimSpd) % len(underColors)
+                        underFg, underBg = underColors[underFrame]
                     else:
-                        underFg, underBg = underColor
+                        underFg, underBg = underColors
                     bgColor = underBg
 
                 pairID = getColorPair(fgColor, bgColor)
 
                 try:
-                    stdscr.addch(y, x, currentChar, curses.color_pair(pairID))
+                    stdscr.addch(y, x, char, curses.color_pair(pairID))
                 except curses.error:
                     pass
 

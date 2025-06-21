@@ -16,16 +16,17 @@ def isFree(mapData, entityData, cordY, cordX):
         return False
     
 class Entity:
-    def __init__(self, metaTile, cords, health, simple=True, animSpd=0):
-        self.metaTile = metaTile
+    def __init__(self, chars, colors,cords, health, simple=True, animSpd=0):
+        self.chars = chars
+        self.colors = colors
         self.cords = cords
         self.health = health
         self.simple = simple
         self.animSpd = animSpd
 
 class Player(Entity):
-    def __init__(self, name, metaTile, cords, health, hunger, thirst):
-        super().__init__(metaTile, cords, health)
+    def __init__(self, chars, colors, cords, animSpd, name, health, hunger, thirst):
+        super().__init__(chars, colors, cords, health, animSpd)
         self.name = name
         self.hunger = hunger
         self.thirst = thirst

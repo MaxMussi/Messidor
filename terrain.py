@@ -2,16 +2,18 @@ import random
 import noise
 
 class Tile:
-    def __init__(self, metaTile, passable=True, animSpd=0):
-        self.metaTile = metaTile
+    def __init__(self, chars, colors, passable=True, animSpd=0):
+        self.chars = chars
+        self.colors = colors
         self.passable = passable
         self.animSpd = animSpd
 
 class World:
-    def __init__(self, seed, biomeScale):
+    def __init__(self, seed, biomeScale, noise):
         random.seed(seed)
         self.seed = seed
         self.biomeScale = biomeScale
+        self.noise = noise
         self.data = {}
 
     def getTile(self, cords):
@@ -20,61 +22,127 @@ class World:
 
         layeredNoise = self.getLayeredNoise(cords)
         biome = self.getBiome(layeredNoise)
-        tile = biome.generate(cords, self.data, self.seed)
+        tile = biome.generate(cords, self.seed)
         self.data[cords] = tile
         return tile
 
     def getLayeredNoise(self, cords):
         y, x = cords
-        temp = noise.pnoise2(y / self.biomeScale, x / self.biomeScale, octaves=3, base=self.seed + 1)
-        hum = noise.pnoise2(y / self.biomeScale, x / self.biomeScale, octaves=3, base=self.seed + 2)
-        weird = min(noise.pnoise2(y / self.biomeScale, x / self.biomeScale, octaves=3, base=self.seed + 3),0)
+        temp = noise.pnoise2(y / self.biomeScale, x / self.biomeScale, octaves=4, persistence=1/4, base=self.seed + 1)
+        hum = noise.pnoise2(y / self.biomeScale, x / self.biomeScale, octaves=4, persistence=1/4, base=self.seed + 2)
+        weird = max(noise.pnoise2(y / self.biomeScale, x / self.biomeScale, octaves=4, persistence=1/4, base=self.seed + 3),0)
         return (temp, hum, weird)
 
     def getBiome(self, layeredNoise):
         temp, hum, weird = layeredNoise
-        return Forest()
+        jitter = lambda: (random.random() - 0.5) * 2 / self.noise
+        temp += jitter()
+        hum += jitter()
+        weird += random.random() / self.noise
+        
+        if -1 <= temp <= 1:
+            if -1 <= hum < -1/8:
+                return DryPlains()
+            elif -1/8 <= hum < 1/8:
+                return Plains()
+            elif 1/8 <= hum < 1:
+                return WetPlains()
+            else:
+                return Plains()
 
 class Biome:
-    def __init__(self, temp, hum, weird, seed):
-        self.temp = temp
-        self.hum = hum
-        self.weird = weird
-
-    def generate(self, cords):
-        raise NotImplementedError
-
-class Forest(Biome):
     def __init__(self):
-        self.temp = 0
-        self.hum = 0.2
-        self.weird = 0
-        self.GRASS = (0,128,0)
-        self.GRASSBG1 = (8,100,0)
-        self.GRASSBG2 = (48,100,0)
-        self.FLOWER_RED = (128,0,0)
-        self.FLOWER_BLUE = (0,0,128)
-        self.FLOWER_PURPLE = (128,0,128)
-    def generate(self, cords, data, seed):
+        pass
+    def generate(self, cords, seed):
         y, x = cords
-        roll = noise.pnoise2(y / 8, x / 8, octaves=3, base=seed)
-        if roll <= 0:
-            grassBg = self.GRASSBG1
+        random.seed((y, x, seed))
+
+class Plains(Biome):
+    def __init__(self):
+        self.GRASS_LIGHTER = (64, 156, 11)
+        self.GRASS_LIGHT = (60, 147, 10)
+        self.GRASS_TALL = (48, 84, 27)
+        self.FLOWER_YELLOW = (240, 236, 17)
+        self.FLOWER_RED = (178, 49, 10)
+        self.FLOWER_BLUE = (10, 24, 148)
+        self.FLOWER_PURPLE = (62, 25, 63)
+    def generate(self, cords, seed):
+        y, x = cords
+        random.seed((y, x, seed))
+        gradient = noise.pnoise2(y / 12, x / 12, octaves=4, persistence=1,base=seed)
+        if gradient >= 0:
+            bg = self.GRASS_LIGHT
         else:
-            grassBg = self.GRASSBG2
-        roll = random.randint(1,12)
+            bg = self.GRASS_LIGHTER
+        roll = random.randint(1,8)
         if roll == 1:
             roll = random.randint(1,48)
-            if roll <= 36:
-                flower = self.FLOWER_RED
+            if roll <= 24:
+                tile = Tile(("º","o"),((self.FLOWER_YELLOW),(bg)),True,16)
+            elif roll <= 38:
+                tile = Tile(("º","o"),((self.FLOWER_RED),(bg)),True,16)
             elif roll <= 47:
-                flower = self.FLOWER_BLUE
+                tile = Tile(("º","o"),((self.FLOWER_BLUE),(bg)),True,16)
             else:
-                flower = self.FLOWER_PURPLE
-            return Tile((("º","o"),(flower,grassBg)),True,16)
-        elif roll <= 3:
-            return Tile(("*",(self.GRASS,grassBg)),True,16)
+                tile = Tile(("º","o"),((self.FLOWER_PURPLE),(bg)),True,16)
+        elif roll == 2:
+            tile = Tile("*",((self.GRASS_TALL),(bg)))
         else:
-            return Tile(((".",","),(self.GRASS,grassBg)),True,16)
+            tile = Tile((".",","),((self.GRASS_TALL),(bg)),True,16)
+        return tile
+
+class WetPlains(Biome):
+    def __init__(self):
+        self.GRASS_LIGHTER = (120, 196, 43)
+        self.GRASS_LIGHT = (111, 182, 40)
+        self.GRASS_TALL = (69, 114, 25)
+        self.WEED = (224, 140, 49)
+        self.PUDDLE_SHALLOW = (49, 178, 224)
+        self.PUDDLE_DEEP = (49, 67, 224)
+    def generate(self, cords, seed):
+        y, x = cords
+        random.seed((y, x, seed))
+        gradient = noise.pnoise2(y / 12, x / 12, octaves=4, persistence=1,base=seed)
+        if gradient >= -0.10:
+            if gradient >= 0.15:
+                bg = self.GRASS_LIGHTER
+            else:
+                bg = self.GRASS_LIGHT
+            roll = random.randint(1,8)
+            if roll == 1:
+                tile = Tile(("-","~"),((self.PUDDLE_DEEP),(self.PUDDLE_SHALLOW)),True,16)
+            elif roll == 2:
+                tile = Tile("*",((self.WEED),(bg)))
+            else:
+                tile = Tile((".",","),((self.GRASS_TALL),(bg)),True,16)
+        elif gradient >= -0.25:
+            tile = Tile(("-","~"),((self.PUDDLE_DEEP),(self.PUDDLE_SHALLOW)),True,16)
+        else:
+            tile = Tile(("-","~"),((self.PUDDLE_SHALLOW),(self.PUDDLE_DEEP)),False,16)
+        return tile
+    
+class DryPlains(Biome):
+    def __init__(self):
+        self.GRASS_LIGHTER = (230, 205, 129)
+        self.GRASS_LIGHT = (230, 192, 129)
+        self.GRASS_TALL = (230, 159, 129)
+        self.FLOWER_PINK = (230, 129, 90)
+    def generate(self, cords, seed):
+        y, x = cords
+        random.seed((y, x, seed))
+        gradient = noise.pnoise2(y / 12, x / 12, octaves=4, persistence=1,base=seed)
+        if gradient >= 0:
+            bg = self.GRASS_LIGHT
+        else:
+            bg = self.GRASS_LIGHTER
+        roll = random.randint(1,24)
+        if roll == 1:
+            tile = Tile(("º","o"),((self.FLOWER_PINK),(bg)),True,16)
+        elif roll <= 4:
+            tile = Tile("*",((self.GRASS_TALL),(bg)))
+        else:
+            tile = Tile((".",","),((self.GRASS_TALL),(bg)),True,16)
+        return tile
+
         
         

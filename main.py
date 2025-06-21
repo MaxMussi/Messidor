@@ -6,6 +6,7 @@ from entities import Player
 
 SEED = 24
 BIOMESCALE = 256
+NOISE = 64
 
 def getWorldCords(pos, cords, height, width):
     posY, posX = pos
@@ -54,9 +55,9 @@ def main(stdscr):
     fg = Layer(height, width)
     ui = Layer(height, width)
 
-    world = World(SEED, BIOMESCALE)
+    world = World(SEED, BIOMESCALE, NOISE)
 
-    player = Player("Max",("@",((255,255,0), None)),(0,0),100,100,100)
+    player = Player("@",((255,255,0),None),(0,0),0,"Max",100,100,100)
 
     while True:
         begin = time.time()
