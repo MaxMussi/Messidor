@@ -20,7 +20,7 @@ class World:
 
         layeredNoise = self.getLayeredNoise(cords)
         biome = self.getBiome(layeredNoise)
-        tile = biome.generate(cords)
+        tile = biome.generate(cords, self.data)
         self.data[cords] = tile
         return tile
 
@@ -49,8 +49,28 @@ class Forest(Biome):
         self.temp = 0
         self.hum = 0.2
         self.weird = 0
-    def generate(self, cords):
+        self.GRASS = (0,255,0)
+        self.GRASSBG1 = (8,100,0)
+        self.GRASSBG2 = (48,100,0)
+        self.FLOWER_RED = (128,0,0)
+        self.FLOWER_BLUE = (0,0,128)
+        self.FLOWER_PURPLE = (128,0,128)
+    def generate(self, cords, data):
         roll = random.randint(0,1)
         if roll == 0:
-            return Tile((".", ((255, 255, 255),(0,0,0))), passable=True)
-        return Tile((",", ((255, 255, 255),(0,0,0))), passable=True)
+            grassBg = self.GRASSBG1
+        else:
+            grassBg = self.GRASSBG2
+        roll = random.randint(1,4)
+        if roll == 1:
+            roll = random.randint(1,48)
+            if roll <= 24:
+                flower = self.FLOWER_RED
+            elif roll <= 47:
+                flower = self.FLOWER_BLUE
+            else:
+                flower = self.FLOWER_PURPLE
+            return Tile((("º","o"),(flower,grassBg)),True,16)
+        return Tile(((".",","),(self.GRASS,grassBg)),True,16)
+        
+        

@@ -59,7 +59,7 @@ class Layer:
                     if isinstance(char, tuple):
                         charFrame = math.floor(self.frame / animSpd) % len(char)
                         currentChar = char[charFrame]
-                    if isinstance(currentColor, tuple) and isinstance(currentColor[0], tuple):
+                    if isinstance(currentColor[0], tuple) and isinstance(currentColor[0][0], tuple):
                         colorFrame = (self.frame // animSpd) % len(color)
                         currentColor = color[colorFrame]
 
