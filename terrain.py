@@ -23,7 +23,12 @@ class World:
         layeredNoise = self.getLayeredNoise(cords)
         biome = self.getBiome(layeredNoise)
         tile = biome.generate(cords, self.seed)
-        self.data[cords] = tile
+
+        if isinstance(tile, str):
+            self.strutGen(tile, self.seed, self.data, cords)
+            tile = self.data[cords]
+        else:
+            self.data[cords] = tile
         return tile
 
     def getLayeredNoise(self, cords):
@@ -39,16 +44,32 @@ class World:
         temp += jitter()
         hum += jitter()
         weird += random.random() / self.noise
-        
-        if -1 <= temp <= 1:
+        if -1 <= temp < -1/8:
+            if -1 <= hum < -1/8:
+                return Forest()
+            elif -1/8 <= hum < 1/8:
+                return Forest()
+            elif 1/8 <= hum <= 1:
+                return Forest()
+        elif -1/8 <= temp <= 1/8:
             if -1 <= hum < -1/8:
                 return DryPlains()
             elif -1/8 <= hum < 1/8:
                 return Plains()
-            elif 1/8 <= hum < 1:
+            elif 1/8 <= hum <= 1:
                 return WetPlains()
-            else:
-                return Plains()
+        elif -1/8 <= temp <= 1:
+            if -1 <= hum < -1/8:
+                return Forest()
+            elif -1/8 <= hum < 1/8:
+                return Forest()
+            elif 1/8 <= hum <= 1:
+                return Forest()
+        return Plains()
+
+    def strutGen(self, strut, seed, data, cords):
+        y, x = cords
+        random.seed((y, x, seed))
 
 class Biome:
     def __init__(self):
@@ -144,5 +165,33 @@ class DryPlains(Biome):
             tile = Tile((".",","),((self.GRASS_TALL),(bg)),True,16)
         return tile
 
-        
-        
+class Forest(Biome):
+    def __init__(self):
+        self.GRASS_LIGHT = (65, 106, 23)
+        self.GRASS = (70, 115, 25)
+        self.GRASS_TALL = (37, 51, 24)
+        self.MUSHROOM_RED = (128, 12, 12)
+        self.MUSHROOM_PURPLE = (104, 25, 115)
+        self.MUSHROOM_GLOWING = (255, 255, 128)
+    def generate(self, cords, seed):
+        y, x = cords
+        random.seed((y, x, seed))
+        gradient = noise.pnoise2(y / 12, x / 12, octaves=4, persistence=1,base=seed)
+        if gradient >= 0:
+            bg = self.GRASS
+        else:
+            bg = self.GRASS_LIGHT
+        roll = random.randint(1,32)
+        if roll == 1:
+            roll = random.randint(1,48)
+            if roll <= 38:
+                tile = Tile("o",((self.MUSHROOM_RED),(bg)))
+            elif roll <= 47:
+                tile = Tile("o",((self.MUSHROOM_PURPLE),(bg)))
+            else:
+                tile = Tile("o",((self.MUSHROOM_GLOWING),(bg)))
+        elif roll <= 5:
+            tile = Tile("*",((self.GRASS_TALL),(bg)))
+        else:
+            tile = Tile((".",","),((self.GRASS_TALL),(bg)),True,16)
+        return tile

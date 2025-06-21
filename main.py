@@ -2,7 +2,7 @@ import curses
 import time
 from renderer import Layer
 from terrain import World
-from entities import Player
+from entities import Player,Spawner,Creature
 
 SEED = 24
 BIOMESCALE = 256
@@ -57,7 +57,9 @@ def main(stdscr):
 
     world = World(SEED, BIOMESCALE, NOISE)
 
-    player = Player("@",((255,255,0),None),(0,0),0,"Max",100,100,100)
+    player = Player("@",((255,255,0),None),(0,0),"Max",100,100,100)
+
+    spawner = Spawner(1,world)
 
     while True:
         begin = time.time()
@@ -77,6 +79,12 @@ def main(stdscr):
                 bg.data[y][x] = world.getTile(worldCord)
 
         fg.clear(height, width)
+
+        for y in range(height):
+            for x in range(width):
+                worldCord = getWorldCords(layerPos, (y, x), height, width)
+                fg.data[y][x] = spawner.attemptSpawn(worldCord)
+
         cordY, cordX = getCordsInLayer(layerPos, player.cords, height, width)
         fg.data[cordY][cordX] = player
     
@@ -94,6 +102,26 @@ def main(stdscr):
 
         if stdscr.getch() != -1:
             pass
+        
+        if run:
+            creatures = []
+
+            for y in range(height):
+                for x in range(width):
+                    entity = fg.data[y][x]
+                    if isinstance(entity, Creature):
+                        creatures.append(entity)
+
+            for entity in creatures:
+                oldY, oldX = entity.cords
+                entity.tickAi(bg.data, fg.data)
+                newY, newX = entity.cords
+                if (newY, newX) != (oldY, oldX):
+                    fg.data[oldY][oldX] = None
+                    spawner.data[(oldY, oldX)] = None
+                    fg.data[newY][newX] = entity
+                    spawner.data[(newY, newX)] = entity
+
 
         end = time.time()
 
