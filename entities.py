@@ -9,10 +9,24 @@ MOVES = {
 }
 
 def isFree(mapData, entityData, cordY, cordX):
-    if getattr(mapData.get((cordY,cordX),None), "passable", True) and getattr(entityData.get((cordY,cordX),None), "passable", True):
-        return True
+    if getattr(mapData.get((cordY,cordX),None), "passable", True):
+        if entityData.get((cordY,cordX), None) is not None:
+            if getattr(entityData.get((cordY,cordX), None), "passable"):
+                return True
+            return None
+        else:
+            return True
     return False
 
+def attack(attacker, attacked):
+    if getattr(attacker, "inventory") is not None:
+        weapon = attacker.inventory.get("weapon", None)
+        if weapon is not None:
+            attacked.health -= getattr(weapon, "damage", 0)
+        else:
+            attacked.health -= attacker.damage
+    elif getattr(attacker, "damage") is not None:
+        attacked.health -= attacker.damage
 
 class Spawner:
     def __init__(self, spawnRate, world):
@@ -39,7 +53,7 @@ class Entity:
         self.colors = colors
         self.cords = cords
         self.health = health
-        self.passable = False
+        self.inventory = {}
 
 class Player(Entity):
     def __init__(self, chars, colors, cords, name, health, hunger, thirst):
@@ -47,36 +61,47 @@ class Player(Entity):
         self.name = name
         self.hunger = hunger
         self.thirst = thirst
-        self.passable = False
+        self.damage = 6
 
-    def controls(self, key,mapData, entityData, scrCords):
+    def controls(self, key, mapData, entityData):
         dy, dx = MOVES.get(key, (0, 0))
         newY = self.cords[0] + dy
         newX = self.cords[1] + dx
-        if (dy != 0 or dx != 0) and isFree(mapData, entityData, newY, newX):
-            self.cords = (newY, newX)
-            return True
+        if (dy != 0 or dx != 0):
+            free = isFree(mapData, entityData, newY, newX)
+            if free:
+                self.cords = (newY, newX)
+                return True
+            elif free is None:
+                attack(self, entityData[newY,newX])
+                return True
         return False
 
 class Creature(Entity):
-    def __init__(self, chars, colors, cords, health):
+    def __init__(self, chars, colors, cords, health, damage=0):
         super().__init__(chars, colors, cords, health)
+        self.oldHealth = health
+        self.passable = False
+        self.damage = damage
 
     def tickAi(self, mapData, entityData):
-        pass
+        return False
 
 class Rabbit(Creature):
     def __init__(self, chars, colors, cords, health):
         super().__init__(chars, colors, cords, health)
     
     def tickAi(self, mapData, entityData):
+        if self.oldHealth < self.health:
+            self.oldHealth = self.health
+            self.colors = ((255,64,64),None)
+        else:
+            self.colors = ((255,255,255),None)
         cordY, cordX = self.cords
         roll = random.randint(0, 7)
         knight_moves = [(1, 2), (2, 1), (-1, 2), (2, -1), (1, -2), (-2, 1), (-1, -2), (-2, -1)]
         dY, dX = knight_moves[roll]
         newY, newX = cordY + dY, cordX + dX
         roll = random.randint(0,1)
-        if self.health > 10 and roll == 0:
-            return None
-        if isFree(mapData, entityData, newY, newX):
-            self.cords = (newY, newX)
+        if (self.health < 10 or roll == 1) and isFree(mapData, entityData, newY, newX):
+            self.cords = (newY, newX)  

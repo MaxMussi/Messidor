@@ -49,7 +49,7 @@ def fillBg(bg, world, layerPos, height, width):
 
 def playerControls(player, mapData, entityData, stdscr):
     key = stdscr.getch()
-    run = player.controls(key, mapData, entityData, player.cords)
+    run = player.controls(key, mapData, entityData)
     if stdscr.getch() == -1:
         pass
     if key == ord("q"):
@@ -68,10 +68,14 @@ def tickAi(spawnerData, worldData, layerPos, height, width):
     for entity in creatures:
         oldY, oldX = entity.cords
         entity.tickAi(worldData, spawnerData)
-        newY, newX = entity.cords
-        if (newY, newX) != (oldY, oldX):
+        if entity.health > 0:
+            newY, newX = entity.cords
+            if (newY, newX) != (oldY, oldX):
+                spawnerData.pop((oldY, oldX), None)
+                spawnerData[(newY, newX)] = entity
+        else:
             spawnerData.pop((oldY, oldX), None)
-            spawnerData[(newY, newX)] = entity
+        
 
 def spawn(spawner, fgData, layerPos, height, width):
     for y in range(height):
@@ -79,7 +83,6 @@ def spawn(spawner, fgData, layerPos, height, width):
             entity = spawner.attemptSpawn(getWorldCords(layerPos, (y,x), height, width))
             fgData[y][x] = entity
     return fgData
-
 
 def main(stdscr):
     curses.start_color()
