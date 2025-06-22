@@ -1,4 +1,5 @@
 import random
+from terrain import World
 
 MOVES = {
     ord("w"): (-1, 0),
@@ -8,19 +9,17 @@ MOVES = {
 }
 
 def isFree(mapData, entityData, cordY, cordX):
-    try:
-        if mapData[cordY][cordX].passable == True and entityData[cordY][cordX] is None:
+    if 0 <= cordY < len(mapData) and 0 <= cordX < len(mapData[0]):
+        if mapData[cordY][cordX].passable and entityData[cordY][cordX] is None:
             return True
-        return False
-    except:
-        return False
+    return False
+
 
 class Spawner:
     def __init__(self, spawnRate, world):
         self.spawnRate = spawnRate
         self.world = world
         self.data = {}
-
     def attemptSpawn(self, cords):
         if cords in self.data:
             return self.data[cords]
@@ -29,21 +28,18 @@ class Spawner:
         layeredNoise = self.world.getLayeredNoise(cords)
         biome = self.world.getBiome(layeredNoise)
 
-        roll = random.randint(1, 2400)
+        roll = random.randint(1,2048)
         if roll <= self.spawnRate:
-            self.data[cords] = Rabbit("r", ((255,255,255), None), cords, 15, False)
-
+            self.data[cords] = Rabbit("r",((255,255,255),None),cords,15)
+        
         return self.data[cords]
-
     
 class Entity:
-    def __init__(self, chars, colors,cords, health, hostile=False):
+    def __init__(self, chars, colors,cords, health):
         self.chars = chars
         self.colors = colors
         self.cords = cords
         self.health = health
-        self.hostile = hostile
-        self.passable = False
 
 class Player(Entity):
     def __init__(self, chars, colors, cords, name, health, hunger, thirst):
@@ -51,40 +47,40 @@ class Player(Entity):
         self.name = name
         self.hunger = hunger
         self.thirst = thirst
+        self.passable = False
 
-    def controls(self, key, mapData, entityData, wolrdCords):
+    def controls(self, key, bgData, fgData, scrCords):
         dy, dx = MOVES.get(key, (0, 0))
         newY = self.cords[0] + dy
         newX = self.cords[1] + dx
-        mapY = wolrdCords[0] + dy
-        mapX = wolrdCords[1] + dx
-        if isFree(mapData, entityData, mapY, mapX):
+        scrY = scrCords[0] + dy
+        scrX = scrCords[1] + dx
+        if (dy != 0 or dx != 0) and isFree(bgData, fgData, scrY, scrX):
             self.cords = (newY, newX)
             return True
         return False
 
 class Creature(Entity):
-    def __init__(self, chars, colors, cords, health, hostile=False):
-        super().__init__(chars, colors, cords, health, hostile)
+    def __init__(self, chars, colors, cords, health):
+        super().__init__(chars, colors, cords, health)
 
-    def tickAi(self, fgData, bgData):
+    def tickAi(self, cords, fgData, bgData):
         pass
 
 class Rabbit(Creature):
-    def __init__(self, char, color, cords, health, hostile):
-        super().__init__(char, color, cords, health, hostile)
-
-    def tickAi(self, bgData, fgData):
-        y, x = self.cords
+    def __init__(self, chars, colors, cords, health):
+        super().__init__(chars, colors, cords, health)
+    
+    def tickAi(self, bgData, fgData, cords):
+        wY, wX = self.cords
         roll = random.randint(0, 7)
         knight_moves = [(1, 2), (2, 1), (-1, 2), (2, -1), (1, -2), (-2, 1), (-1, -2), (-2, -1)]
-        dy, dx = knight_moves[roll]
-        newY, newX = y + dy, x + dx
-        if self.health < 15:
-            if isFree(bgData, fgData, newY, newX):
-                self.cords = (newY, newX)
-        else:
-            roll = random.randint(0,1)
-            if roll == 1:
-                if isFree(bgData, fgData, newY, newX):
-                    self.cords = (newY, newX)
+        dY, dX = knight_moves[roll]
+        newY, newX = wY + dY, wX + dX
+        cordY, cordX = cords
+        ncordY, ncordX = cordY + dY, cordX + dX
+        roll = random.randint(0,1)
+        if self.health > 10 and roll == 0:
+            return None
+        if isFree(bgData, fgData, ncordY, ncordX):
+            self.cords = (newY, newX)
