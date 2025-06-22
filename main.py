@@ -150,12 +150,13 @@ def main(stdscr):
         bg.draw(stdscr)
         fg.draw(stdscr, bg.data)
 
+        end = time.time()
+        time.sleep(max(0, (1 / 24) - (end - begin)))
+
         stdscr.addstr(0, 0, f"Player cords: {player.cords}")
         stdscr.addstr(1, 0, f"Layer cords: {fg.pos}")
         stdscr.addstr(2, 0, f"Player cords in layer: {(scrY, scrX)}")
+        stdscr.addstr(1, 0, f"Layer cords: {(1/(end - begin)):.2f}")
         stdscr.refresh()
-
-        end = time.time()
-        time.sleep(max(0, (1 / 24) - (end - begin)))
 
 curses.wrapper(main)

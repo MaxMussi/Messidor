@@ -81,7 +81,7 @@ class Layer:
 
                 try:
                     stdscr.addch(y, x, char, curses.color_pair(pairID))
-                except curses.error:
+                except:
                     pass
 
     def clear(self, height, width):
