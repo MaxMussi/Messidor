@@ -57,7 +57,7 @@ def playerControls(player, mapData, entityData, stdscr):
     else:
         return run
 
-def tickAi(spawnerData, worldData, layerPos, height, width):
+def tickAi(spawnerData, worldData, layerPos, playerCords, height, width):
     creatures = []
     for y in range(height):
         for x in range(width):
@@ -67,7 +67,7 @@ def tickAi(spawnerData, worldData, layerPos, height, width):
 
     for entity in creatures:
         oldY, oldX = entity.cords
-        entity.tickAi(worldData, spawnerData)
+        entity.tickAi(worldData, spawnerData, playerCords)
         if entity.health > 0:
             newY, newX = entity.cords
             if (newY, newX) != (oldY, oldX):
@@ -83,6 +83,22 @@ def spawn(spawner, fgData, layerPos, height, width):
             entity = spawner.attemptSpawn(getWorldCords(layerPos, (y,x), height, width))
             fgData[y][x] = entity
     return fgData
+
+def stunTimer(spawnerData, layerPos, height, width):
+    creatures = []
+    for y in range(height):
+        for x in range(width):
+            wCords = getWorldCords(layerPos, (y, x), height, width)
+            if isinstance(spawnerData.get(wCords, None), Creature):
+                creatures.append(spawnerData.get(wCords, None))
+    
+    for entity in creatures:
+        if entity.stunTimer > 0:
+            entity.stunTimer -= 1
+            entity.colors = ((255, 64, 64),None)
+        else:
+            entity.resetColors()
+
 
 def main(stdscr):
     curses.start_color()
@@ -112,15 +128,18 @@ def main(stdscr):
 
         run = playerControls(player, world.data, spawner.data, stdscr)
 
+        layerPos = getLayerCords(fg.pos, player.cords, height, width)
+        
         if run:
-            layerPos = getLayerCords(fg.pos, player.cords, height, width)
             bg.pos = layerPos
             fg.pos = layerPos
 
-            tickAi(spawner.data, world.data, fg.pos, height, width)
+            tickAi(spawner.data, world.data, fg.pos, player.cords, height, width)
             fg.data = spawn(spawner, fg.data, fg.pos, height, width)
         elif run is None:
             break
+
+        stunTimer(spawner.data, layerPos, height, width)
         
         scrY, scrX = getCordsInLayer(fg.pos, player.cords, height, width)
         fg.data[scrY][scrX] = player

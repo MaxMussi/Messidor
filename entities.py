@@ -8,12 +8,14 @@ MOVES = {
     ord("d"): (0, 1),
 }
 
-def isFree(mapData, entityData, cordY, cordX):
+def isFree(playerCords, mapData, entityData, cordY, cordX):
     if getattr(mapData.get((cordY,cordX),None), "passable", True):
         if entityData.get((cordY,cordX), None) is not None:
             if getattr(entityData.get((cordY,cordX), None), "passable"):
                 return True
             return None
+        elif (cordY, cordX) == playerCords:
+            return False
         else:
             return True
     return False
@@ -23,10 +25,13 @@ def attack(attacker, attacked):
         weapon = attacker.inventory.get("weapon", None)
         if weapon is not None:
             attacked.health -= getattr(weapon, "damage", 0)
+            attacked.stunTimer = 6
         else:
             attacked.health -= attacker.damage
+            attacked.stunTimer = 6
     elif getattr(attacker, "damage") is not None:
         attacked.health -= attacker.damage
+        attacked.stunTimer = 6
 
 class Spawner:
     def __init__(self, spawnRate, world):
@@ -62,13 +67,14 @@ class Player(Entity):
         self.hunger = hunger
         self.thirst = thirst
         self.damage = 6
+        self.stunTimer = 0
 
     def controls(self, key, mapData, entityData):
         dy, dx = MOVES.get(key, (0, 0))
         newY = self.cords[0] + dy
         newX = self.cords[1] + dx
         if (dy != 0 or dx != 0):
-            free = isFree(mapData, entityData, newY, newX)
+            free = isFree(self.cords, mapData, entityData, newY, newX)
             if free:
                 self.cords = (newY, newX)
                 return True
@@ -77,31 +83,33 @@ class Player(Entity):
                 return True
         return False
 
+    def resetColors(self):
+        self.colors = ((255,255,0),None)
+
 class Creature(Entity):
     def __init__(self, chars, colors, cords, health, damage=0):
         super().__init__(chars, colors, cords, health)
-        self.oldHealth = health
+        self.stunTimer = 0
         self.passable = False
         self.damage = damage
 
     def tickAi(self, mapData, entityData):
-        return False
+        pass
+    def resetColors():
+        pass
 
 class Rabbit(Creature):
     def __init__(self, chars, colors, cords, health):
         super().__init__(chars, colors, cords, health)
     
-    def tickAi(self, mapData, entityData):
-        if self.oldHealth < self.health:
-            self.oldHealth = self.health
-            self.colors = ((255,64,64),None)
-        else:
-            self.colors = ((255,255,255),None)
+    def tickAi(self, mapData, entityData, playerCords):
         cordY, cordX = self.cords
         roll = random.randint(0, 7)
         knight_moves = [(1, 2), (2, 1), (-1, 2), (2, -1), (1, -2), (-2, 1), (-1, -2), (-2, -1)]
         dY, dX = knight_moves[roll]
         newY, newX = cordY + dY, cordX + dX
-        roll = random.randint(0,1)
-        if (self.health < 10 or roll == 1) and isFree(mapData, entityData, newY, newX):
-            self.cords = (newY, newX)  
+        roll = random.randint(1,4)
+        if (self.health < 10 or roll == 1) and isFree(playerCords, mapData, entityData, newY, newX):
+            self.cords = (newY, newX) 
+    def resetColors(self):
+        self.colors = ((255,255,255),None)
