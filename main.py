@@ -37,12 +37,49 @@ def getCordsInLayer(pos, cords, height, width):
     posY, posX = pos
     cordY, cordX = cords
     return (
-        cordY - posY + (height - 1) // 2,
-        cordX - posX + (width - 1) // 2
+        cordY - posY + height // 2,
+        cordX - posX + width // 2
     )
 
-def in_bounds(data, y, x):
-    return 0 <= y < len(data) and 0 <= x < len(data[0])
+def fillBg(bg, world, layerPos, height, width):
+    for y in range(height):
+            for x in range(width):
+                worldCord = getWorldCords(layerPos, (y, x), height, width)
+                bg.data[y][x] = world.getTile(worldCord)
+
+def playerControls(player, mapData, entityData, stdscr):
+    key = stdscr.getch()
+    run = player.controls(key, mapData, entityData, player.cords)
+    if stdscr.getch() == -1:
+        pass
+    if key == ord("q"):
+        return None
+    else:
+        return run
+
+def tickAi(spawnerData, worldData, layerPos, height, width):
+    creatures = []
+    for y in range(height):
+        for x in range(width):
+            wCords = getWorldCords(layerPos, (y, x), height, width)
+            if isinstance(spawnerData.get(wCords, None), Creature):
+                creatures.append(spawnerData.get(wCords, None))
+
+    for entity in creatures:
+        oldY, oldX = entity.cords
+        entity.tickAi(worldData, spawnerData)
+        newY, newX = entity.cords
+        if (newY, newX) != (oldY, oldX):
+            spawnerData.pop((oldY, oldX), None)
+            spawnerData[(newY, newX)] = entity
+
+def spawn(spawner, fgData, layerPos, height, width):
+    for y in range(height):
+        for x in range(width):
+            entity = spawner.attemptSpawn(getWorldCords(layerPos, (y,x), height, width))
+            fgData[y][x] = entity
+    return fgData
+
 
 def main(stdscr):
     curses.start_color()
@@ -62,68 +99,38 @@ def main(stdscr):
     player = Player("@", ((255, 255, 0), None), (0, 0), "Max", 100, 100, 100)
     spawner = Spawner(1, world)
 
+    fg.data = spawn(spawner, fg.data, fg.pos, height, width)
+
     while True:
         begin = time.time()
         curses.curs_set(0)
+
         height, width = stdscr.getmaxyx()
-        layerPos = getLayerCords(fg.pos, player.cords, height, width)
 
-        for layer in [bg, fg, ui]:
-            layer.pos = layerPos
-
-        bg.clear(height, width)
-        fg.clear(height, width)
-
-        for y in range(height):
-            for x in range(width):
-                worldCord = getWorldCords(layerPos, (y, x), height, width)
-                bg.data[y][x] = world.getTile(worldCord)
-
-        key = stdscr.getch()
-        run = player.controls(key, bg.data, fg.data, getCordsInLayer(layerPos, player.cords, height, width))
-        if key == ord("q"):
-            break
-        if stdscr.getch() == -1:
-            pass
+        run = playerControls(player, world.data, spawner.data, stdscr)
 
         if run:
-            creatures = []
-            for y in range(height):
-                for x in range(width):
-                    worldCord = getWorldCords(layerPos, (y, x), height, width)
-                    entity = spawner.data.get(worldCord)
-                    if isinstance(entity, Creature):
-                        creatures.append(entity)
+            layerPos = getLayerCords(fg.pos, player.cords, height, width)
+            bg.pos = layerPos
+            fg.pos = layerPos
 
-            for entity in creatures:
-                oldY, oldX = getCordsInLayer(layerPos, entity.cords, height, width)
-                entity.tickAi(bg.data, fg.data, (oldY, oldX))
-                newY, newX = getCordsInLayer(layerPos, entity.cords, height, width)
-                if (newY, newX) != (oldY, oldX):
-                    oldWorld = getWorldCords(layerPos, (oldY, oldX), height, width)
-                    newWorld = entity.cords
-                    spawner.data.pop(oldWorld, None)
-                    spawner.data[newWorld] = entity
+            tickAi(spawner.data, world.data, fg.pos, height, width)
+            fg.data = spawn(spawner, fg.data, fg.pos, height, width)
+        elif run is None:
+            break
+        
+        scrY, scrX = getCordsInLayer(fg.pos, player.cords, height, width)
+        fg.data[scrY][scrX] = player
 
-        for y in range(height):
-            for x in range(width):
-                worldCord = getWorldCords(layerPos, (y, x), height, width)
-                entity = spawner.data.get(worldCord)
-                if not entity:
-                    entity = spawner.attemptSpawn(worldCord)
-                if entity:
-                    fg.data[y][x] = entity
-
-        cordY, cordX = getCordsInLayer(layerPos, player.cords, height, width)
-        if in_bounds(fg.data, cordY, cordX):
-            fg.data[cordY][cordX] = player
+        bg.clear(height, width)
+        fillBg(bg, world, bg.pos, height, width)
 
         bg.draw(stdscr)
         fg.draw(stdscr, bg.data)
 
         stdscr.addstr(0, 0, f"Player cords: {player.cords}")
-        stdscr.addstr(1, 0, f"Layer cords: {layerPos}")
-        stdscr.addstr(2, 0, f"Player cords in layer: {(cordY, cordX)}")
+        stdscr.addstr(1, 0, f"Layer cords: {fg.pos}")
+        stdscr.addstr(2, 0, f"Player cords in layer: {(scrY, scrX)}")
         stdscr.refresh()
 
         end = time.time()

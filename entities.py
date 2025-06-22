@@ -9,9 +9,8 @@ MOVES = {
 }
 
 def isFree(mapData, entityData, cordY, cordX):
-    if 0 <= cordY < len(mapData) and 0 <= cordX < len(mapData[0]):
-        if mapData[cordY][cordX].passable and entityData[cordY][cordX] is None:
-            return True
+    if getattr(mapData.get((cordY,cordX),None), "passable", True) and getattr(entityData.get((cordY,cordX),None), "passable", True):
+        return True
     return False
 
 
@@ -40,6 +39,7 @@ class Entity:
         self.colors = colors
         self.cords = cords
         self.health = health
+        self.passable = False
 
 class Player(Entity):
     def __init__(self, chars, colors, cords, name, health, hunger, thirst):
@@ -49,13 +49,11 @@ class Player(Entity):
         self.thirst = thirst
         self.passable = False
 
-    def controls(self, key, bgData, fgData, scrCords):
+    def controls(self, key,mapData, entityData, scrCords):
         dy, dx = MOVES.get(key, (0, 0))
         newY = self.cords[0] + dy
         newX = self.cords[1] + dx
-        scrY = scrCords[0] + dy
-        scrX = scrCords[1] + dx
-        if (dy != 0 or dx != 0) and isFree(bgData, fgData, scrY, scrX):
+        if (dy != 0 or dx != 0) and isFree(mapData, entityData, newY, newX):
             self.cords = (newY, newX)
             return True
         return False
@@ -64,23 +62,21 @@ class Creature(Entity):
     def __init__(self, chars, colors, cords, health):
         super().__init__(chars, colors, cords, health)
 
-    def tickAi(self, cords, fgData, bgData):
+    def tickAi(self, mapData, entityData):
         pass
 
 class Rabbit(Creature):
     def __init__(self, chars, colors, cords, health):
         super().__init__(chars, colors, cords, health)
     
-    def tickAi(self, bgData, fgData, cords):
-        wY, wX = self.cords
+    def tickAi(self, mapData, entityData):
+        cordY, cordX = self.cords
         roll = random.randint(0, 7)
         knight_moves = [(1, 2), (2, 1), (-1, 2), (2, -1), (1, -2), (-2, 1), (-1, -2), (-2, -1)]
         dY, dX = knight_moves[roll]
-        newY, newX = wY + dY, wX + dX
-        cordY, cordX = cords
-        ncordY, ncordX = cordY + dY, cordX + dX
+        newY, newX = cordY + dY, cordX + dX
         roll = random.randint(0,1)
         if self.health > 10 and roll == 0:
             return None
-        if isFree(bgData, fgData, ncordY, ncordX):
+        if isFree(mapData, entityData, newY, newX):
             self.cords = (newY, newX)
