@@ -53,7 +53,7 @@ class Spawner:
         return self.data[cords]
     
 class Entity:
-    def __init__(self, chars, colors,cords, health):
+    def __init__(self, chars, colors, cords, health):
         self.chars = chars
         self.colors = colors
         self.cords = cords
