@@ -156,7 +156,7 @@ def main(stdscr):
         stdscr.addstr(0, 0, f"Player cords: {player.cords}")
         stdscr.addstr(1, 0, f"Layer cords: {fg.pos}")
         stdscr.addstr(2, 0, f"Player cords in layer: {(scrY, scrX)}")
-        stdscr.addstr(1, 0, f"Layer cords: {(1/(end - begin)):.2f}")
+        stdscr.addstr(3, 0, f"Layer cords: {(1/(end - begin)):.2f}")
         stdscr.refresh()
 
 curses.wrapper(main)
