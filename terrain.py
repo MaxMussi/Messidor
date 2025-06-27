@@ -69,14 +69,14 @@ class World:
 
     def strutGen(self, strut, seed, data, cords):
         y, x = cords
-        random.seed((y, x, seed))
+        random.seed(str((y, x, seed)))
 
 class Biome:
     def __init__(self):
         pass
     def generate(self, cords, seed):
         y, x = cords
-        random.seed((y, x, seed))
+        random.seed(str((y, x, seed)))
 
 class Plains(Biome):
     def __init__(self):
@@ -89,7 +89,7 @@ class Plains(Biome):
         self.FLOWER_PURPLE = (62, 25, 63)
     def generate(self, cords, seed):
         y, x = cords
-        random.seed((y, x, seed))
+        random.seed(str((y, x, seed)))
         gradient = noise.pnoise2(y / 12, x / 12, octaves=4, persistence=1,base=seed)
         if gradient >= 0:
             bg = self.GRASS_LIGHT
@@ -122,7 +122,7 @@ class WetPlains(Biome):
         self.PUDDLE_DEEP = (49, 67, 224)
     def generate(self, cords, seed):
         y, x = cords
-        random.seed((y, x, seed))
+        random.seed(str((y, x, seed)))
         gradient = noise.pnoise2(y / 12, x / 12, octaves=4, persistence=1,base=seed)
         if gradient >= -0.10:
             if gradient >= 0.15:
@@ -150,7 +150,7 @@ class DryPlains(Biome):
         self.FLOWER_PINK = (230, 129, 90)
     def generate(self, cords, seed):
         y, x = cords
-        random.seed((y, x, seed))
+        random.seed(str((y, x, seed)))
         gradient = noise.pnoise2(y / 12, x / 12, octaves=4, persistence=1,base=seed)
         if gradient >= 0:
             bg = self.GRASS_LIGHT
@@ -175,7 +175,7 @@ class Forest(Biome):
         self.MUSHROOM_GLOWING = (255, 255, 128)
     def generate(self, cords, seed):
         y, x = cords
-        random.seed((y, x, seed))
+        random.seed(str((y, x, seed)))
         gradient = noise.pnoise2(y / 12, x / 12, octaves=4, persistence=1,base=seed)
         if gradient >= 0:
             bg = self.GRASS
