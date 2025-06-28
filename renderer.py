@@ -31,6 +31,15 @@ def getColorPair(fgColor, bgColor):
     next_pair_id += 1
     return colorPairIDs[key]
 
+def colorClear():
+    global next_color_id, next_pair_id, colorIDs, colorPairIDs
+
+    colorIDs.clear()
+    colorPairIDs.clear()
+
+    next_color_id = 1
+    next_pair_id = 1
+
 class Layer:
     def __init__(self, height, width):
         self.height = height
@@ -44,6 +53,10 @@ class Layer:
             self.frame += 1
         else:
             self.frame = 0
+        
+        if next_color_id >= 255 or next_pair_id >= 255:
+            colorClear()
+
         for y in range(self.height):
             for x in range(self.width):
                 tile = self.data[y][x]
@@ -66,7 +79,7 @@ class Layer:
 
                 fgColor, bgColor = color
 
-                if bgColor is None and underlayer[y][x] is not None:
+                if bgColor is None and underlayer is not None and underlayer[y][x] is not None:
                     underChars = underlayer[y][x].chars
                     underColors = underlayer[y][x].colors
                     if isinstance(underColors[0][0], tuple):
