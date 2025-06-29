@@ -24,11 +24,7 @@ class World:
         biome = self.getBiome(layeredNoise)
         tile = biome.generate(cords, self.seed)
 
-        if isinstance(tile, str):
-            self.strutGen(tile, self.seed, self.data, cords)
-            tile = self.data[cords]
-        else:
-            self.data[cords] = tile
+        self.data[cords] = tile
         return tile
 
     def getLayeredNoise(self, cords):
@@ -66,10 +62,6 @@ class World:
             elif 1/8 <= hum <= 1:
                 return Forest()
         return Plains()
-
-    def strutGen(self, strut, seed, data, cords):
-        y, x = cords
-        random.seed(str((y, x, seed)))
 
 class Biome:
     def __init__(self):
