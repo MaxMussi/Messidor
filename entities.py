@@ -21,17 +21,7 @@ def isFree(playerCords, mapData, entityData, cordY, cordX):
     return False
 
 def attack(attacker, attacked):
-    if getattr(attacker, "inventory") is not None:
-        weapon = attacker.inventory.get("weapon", None)
-        if weapon is not None:
-            attacked.health -= getattr(weapon, "damage", 0)
-            attacked.stunTimer = 6
-        else:
-            attacked.health -= attacker.damage
-            attacked.stunTimer = 6
-    elif getattr(attacker, "damage") is not None:
-        attacked.health -= attacker.damage
-        attacked.stunTimer = 6
+    attacked.harm(attacker)
 
 class Spawner:
     def __init__(self, spawnRate, world):
@@ -83,6 +73,19 @@ class Player(Entity):
                 return True
         return False
 
+    def harm(self, attacker):
+        if getattr(attacker, "inventory") is not None:
+            weapon = attacker.inventory.get("weapon", None)
+            if weapon is not None:
+                self.health -= getattr(weapon, "damage", 0)
+                self.stunTimer = 6
+            else:
+                self.health -= attacker.damage
+                self.stunTimer = 6
+        elif getattr(attacker, "damage") is not None:
+            self.health -= attacker.damage
+            self.stunTimer = 6
+
     def resetColors(self):
         self.colors = ((255,255,0),None)
 
@@ -95,7 +98,9 @@ class Creature(Entity):
 
     def tickAi(self, mapData, entityData):
         pass
-    def resetColors():
+    def harm(self):
+        pass
+    def resetColors(self):
         pass
 
 class Rabbit(Creature):
@@ -110,6 +115,20 @@ class Rabbit(Creature):
         newY, newX = cordY + dY, cordX + dX
         roll = random.randint(1,4)
         if (self.health < 10 or roll == 1) and isFree(playerCords, mapData, entityData, newY, newX):
-            self.cords = (newY, newX) 
+            self.cords = (newY, newX)
+
+    def harm(self, attacker):
+        if getattr(attacker, "inventory") is not None:
+            weapon = attacker.inventory.get("weapon", None)
+            if weapon is not None:
+                self.health -= getattr(weapon, "damage", 0)
+                self.stunTimer = 6
+            else:
+                self.health -= attacker.damage
+                self.stunTimer = 6
+        elif getattr(attacker, "damage") is not None:
+            self.health -= attacker.damage
+            self.stunTimer = 6
+
     def resetColors(self):
         self.colors = ((255,255,255),None)
