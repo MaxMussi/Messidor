@@ -8,7 +8,10 @@ MOVES = {
     ord("d"): (0, 1),
 }
 
+
+
 def isFree(playerCords, mapData, entityData, cordY, cordX):
+    # Check if location is free
     if getattr(mapData.get((cordY,cordX),None), "passable", True):
         if entityData.get((cordY,cordX), None) is not None:
             if getattr(entityData.get((cordY,cordX), None), "passable"):
@@ -21,6 +24,7 @@ def isFree(playerCords, mapData, entityData, cordY, cordX):
     return False
 
 def attack(attacker, attacked):
+    # Wrapper function to attack an enemy
     attacked.harm(attacker)
 
 class Spawner:
@@ -29,9 +33,10 @@ class Spawner:
         self.world = world
         self.data = {}
     def attemptSpawn(self, cords):
+        # If we have coords return them
         if cords in self.data:
             return self.data[cords]
-
+        # If not make them
         self.data[cords] = None
         layeredNoise = self.world.getLayeredNoise(cords)
         biome = self.world.getBiome(layeredNoise)
@@ -44,8 +49,10 @@ class Spawner:
     
 class Entity:
     def __init__(self, chars, colors, cords, health):
+        # Entity Class
         self.chars = chars
         self.colors = colors
+        # Position
         self.cords = cords
         self.health = health
         self.inventory = {}
@@ -95,10 +102,10 @@ class Creature(Entity):
         self.stunTimer = 0
         self.passable = False
         self.damage = damage
-
-    def tickAi(self, mapData, entityData):
+    # Add multiple vars due to python overiding issues
+    def tickAi(self, mapData, entityData,playerCords):
         pass
-    def harm(self):
+    def harm(self,attacker):
         pass
     def resetColors(self):
         pass

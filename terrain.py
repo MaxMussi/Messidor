@@ -69,7 +69,11 @@ class Biome:
     def generate(self, cords, seed):
         y, x = cords
         random.seed(str((y, x, seed)))
+        # We need to create a phantom tile due to python overriding logic, this ensures we return a tile so python is happy
+        tile = Tile(0,0,True,0)
+        return tile
 
+# Center Register of all colors
 class Plains(Biome):
     def __init__(self):
         self.GRASS_LIGHTER = (64, 156, 11)
